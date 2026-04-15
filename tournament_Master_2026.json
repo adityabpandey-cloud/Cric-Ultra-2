@@ -1,0 +1,23 @@
+{
+  "IPL_2026_Edition": {
+    "TotalTeams": 10,
+    "ImpactPlayerRule": true,
+    "Teams": [
+      { "Name": "RCB", "Captain": "Virat Kohli", "Rating": 9.5 },
+      { "Name": "MI", "Captain": "Hardik Pandya", "Rating": 9.2 },
+      { "Name": "CSK", "Captain": "Ruturaj Gaikwad", "Rating": 9.3 }
+    ]
+  },
+  "T20_World_Cup_2026": {
+    "Host": "India & Sri Lanka",
+    "TotalTeams": 20,
+    "Groups": ["Group A", "Group B", "Group C", "Group D"],
+    "NewEntries": ["Scotland", "Italy", "USA"]
+  },
+  "Gameplay_Rules": {
+    "DRS_Per_Innings": 2,
+    "SuperOver": "Enabled",
+    "PhysicsMode": "WarThunder_RealTime"
+  }
+}
+
