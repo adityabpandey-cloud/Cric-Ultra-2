@@ -1,0 +1,9 @@
+{
+  "StadiumName": "Wankhede Stadium, Mumbai",
+  "PitchLength": 20.12,
+  "BoundaryRadius": 70.0,
+  "OutfieldSpeed": 0.85,
+  "IPL_Team_Home": "Mumbai Indians",
+  "Weather": "Humid",
+  "CrowdCapacity": 33108
+}
