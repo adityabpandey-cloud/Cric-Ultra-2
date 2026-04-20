@@ -1,55 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CRIC-ULTRA 26 | 3D VIEW</title>
-    <!-- Hum Three.js ka naya aur fast link use kar rahe hain -->
-    <script src="https://unpkg.com"></script>
+    <title>CRIC-ULTRA 26 | LIVE VIEW</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000b1e; }
-        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: #00d2ff; font-family: sans-serif; pointer-events: none; z-index: 10; }
+        body { margin: 0; background: #000b1e; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+        #stadium { width: 90vw; height: 60vh; background: #228B22; border: 5px solid #fff; border-radius: 50%; position: relative; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 50px #00ff88; }
+        #pitch { width: 15%; height: 60%; background: #d2b48c; border-left: 2px solid #fff; border-right: 2px solid #fff; position: absolute; }
+        #player { width: 30px; height: 30px; background: #00d2ff; border-radius: 50%; position: absolute; bottom: 20%; box-shadow: 0 0 15px #00d2ff; animation: breathe 2s infinite; }
+        #ui { position: absolute; top: 20px; color: #00d2ff; text-align: center; text-shadow: 0 0 10px #00d2ff; }
+        @keyframes breathe { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
     <div id="ui">
         <h1>🏏 CRIC-ULTRA 26</h1>
-        <p>STADIUM: WANKHEDE | LOADING 3D ASSETS...</p>
+        <p>WANKHEDE STADIUM: ENGINE ONLINE</p>
     </div>
-    <script>
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000b1e);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // Lights
-        const light = new THREE.AmbientLight(0xffffff, 1.5);
-        scene.add(light);
-
-        // Hara Maidan (Basic Circle)
-        const geometry = new THREE.CircleGeometry(10, 32);
-        const material = new THREE.MeshBasicMaterial({ color: 0x228B22 }); // Pure Green
-        const ground = new THREE.Mesh(geometry, material);
-        ground.rotation.x = -Math.PI / 2;
-        scene.add(ground);
-
-        // Player (Blue Cube)
-        const pGeo = new THREE.BoxGeometry(1, 2, 1);
-        const pMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff });
-        const player = new THREE.Mesh(pGeo, pMat);
-        player.position.y = 1;
-        scene.add(player);
-
-        camera.position.set(0, 5, 15);
-        camera.lookAt(0, 0, 0);
-
-        function animate() {
-            requestAnimationFrame(animate);
-            player.rotation.y += 0.02;
-            renderer.render(scene, camera);
-        }
-        animate();
-    </script>
+    <div id="stadium">
+        <div id="pitch"></div>
+        <div id="player"></div>
+    </div>
 </body>
 </html>
