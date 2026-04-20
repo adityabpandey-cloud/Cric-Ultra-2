@@ -1,74 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CRIC-ULTRA 26 | CINEMATIC RENDER</title>
-    <!-- Three.js with High-End Extensions -->
+    <title>CRIC-ULTRA 26 | PRO VIEW</title>
     <script src="https://cloudflare.com"></script>
     <style>
         body { margin: 0; background: #000; overflow: hidden; }
-        #ui { position: absolute; bottom: 30px; width: 100%; text-align: center; color: #00d2ff; font-family: 'Arial Black', sans-serif; z-index: 10; text-shadow: 0 0 15px #00d2ff; }
+   #ui { position: absolute; bottom: 20px; width: 100%; text-align: center; color: #00d2ff; font-family: 'Arial Black', sans-serif; z-index: 10; text-shadow: 0 0 10px #000; }
     </style>
 </head>
 <body>
-    <div id="ui">
-        <h1>🏏 CRIC-ULTRA 26</h1>
-        <p>ULTRA GRAPHICS: CINEMATIC ZOOM & PBR SHADERS ACTIVE</p>
-    </div>
+    <div id="ui"><h1>🏏 CRIC-ULTRA 26</h1><p>WANKHEDE STADIUM | LIGHTS ON! ✨</p></div>
     <script>
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000b1e, 0.02); // Stadium Mist (Fog) for Depth
+        scene.background = new THREE.Color(0x000b1e);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true; // RC Style Dynamic Shadows
         document.body.appendChild(renderer.domElement);
 
-        // 1. RC STYLE LIGHTING (Stadium Floodlights)
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-        scene.add(hemiLight);
-        
-        const spotLight = new THREE.SpotLight(0xffffff, 2);
-        spotLight.position.set(15, 40, 35);
-        spotLight.castShadow = true;
-        scene.add(spotLight);
+        // 1. LIGHTS (As per your Green Appeal)
+        const light = new THREE.AmbientLight(0xffffff, 1.2); 
+        scene.add(light);
+        const sun = new THREE.DirectionalLight(0xffffff, 1);
+        sun.position.set(5, 10, 7.5);
+        scene.add(sun);
 
-        // 2. REALISTIC PITCH (Detailed Texture Look)
-        const pitch = new THREE.Mesh(
-            new THREE.PlaneGeometry(5, 22),
-            new THREE.MeshStandardMaterial({ color: 0xba9a7b, roughness: 1, metalness: 0 })
-        );
+        // 2. GROUND & PITCH
+        const ground = new THREE.Mesh(new THREE.CircleGeometry(20, 64), new THREE.MeshStandardMaterial({ color: 0x1b5e20 }));
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        const pitch = new THREE.Mesh(new THREE.PlaneGeometry(4, 15), new THREE.MeshStandardMaterial({ color: 0xc19a6b }));
         pitch.rotation.x = -Math.PI / 2;
         pitch.position.y = 0.05;
         scene.add(pitch);
 
-        // 3. 3D BATTING PLAYER (Advanced Capsule Mesh)
+        // 3. PLAYER (As per your Green Appeal)
         const player = new THREE.Group();
-        const body = new THREE.Mesh(
-            new THREE.CapsuleGeometry(0.5, 1.2, 8, 16),
-            new THREE.MeshStandardMaterial({ color: 0x00d2ff, roughness: 0.5, metalness: 0.2 })
-        );
-        body.castShadow = true;
-        
-        const bat = new THREE.Mesh(
-            new THREE.BoxGeometry(0.2, 1.6, 0.1),
-            new THREE.MeshStandardMaterial({ color: 0x8B4513 })
-        );
-        bat.position.set(0.6, -0.2, 0.6);
-        bat.rotation.z = -0.4; // Batting Stance Angle
-
+        const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.2), new THREE.MeshStandardMaterial({ color: 0x00d2ff }));
+        const bat = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.4, 0.1), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+        bat.position.set(0.6, 0, 0.5);
+        bat.rotation.z = -0.3;
         player.add(body); player.add(bat);
-        player.position.y = 1.35;
+        player.position.y = 1.2;
         scene.add(player);
 
-        // 4. CINEMATIC CAMERA (RC Intro Zoom)
-        camera.position.set(0, 4, 25);
-        camera.lookAt(0, 2, 0);
+        // 4. CAMERA (12 units - As per your Green Appeal)
+        camera.position.set(0, 5, 12);
+        camera.lookAt(0, 1, 0);
 
         function animate() {
             requestAnimationFrame(animate);
-            // Dynamic Zoom-in Effect
-            if(camera.position.z > 14) camera.position.z -= 0.05; 
             renderer.render(scene, camera);
         }
         animate();
