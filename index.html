@@ -1,24 +1,18 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>CRIC-ULTRA 26 | LIVE VIEW</title>
-    <style>
-        body { margin: 0; background: #000b1e; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
-        #stadium { width: 90vw; height: 60vh; background: #228B22; border: 5px solid #fff; border-radius: 50%; position: relative; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 50px #00ff88; }
-        #pitch { width: 15%; height: 60%; background: #d2b48c; border-left: 2px solid #fff; border-right: 2px solid #fff; position: absolute; }
-        #player { width: 30px; height: 30px; background: #00d2ff; border-radius: 50%; position: absolute; bottom: 20%; box-shadow: 0 0 15px #00d2ff; animation: breathe 2s infinite; }
-        #ui { position: absolute; top: 20px; color: #00d2ff; text-align: center; text-shadow: 0 0 10px #00d2ff; }
-        @keyframes breathe { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-    </style>
-</head>
-<body>
-    <div id="ui">
-        <h1>🏏 CRIC-ULTRA 26</h1>
-        <p>WANKHEDE STADIUM: ENGINE ONLINE</p>
-    </div>
-    <div id="stadium">
-        <div id="pitch"></div>
-        <div id="player"></div>
-    </div>
-</body>
-</html>
+<<style>
+    /* 3D Perspective Magic */
+    #stadium { 
+        transform: rotateX(60deg); /* Stadium ko 3D angle dena */
+        perspective: 1000px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    #pitch {
+        background: linear-gradient(#d2b48c, #c19a6b); /* Real mitti ka color */
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+    }
+    #player {
+        width: 20px; height: 50px; /* Player ko lamba aur 3D banana */
+        background: linear-gradient(#00d2ff, #0088ff);
+        border-radius: 10px 10px 2px 2px;
+        transform: rotateX(-60deg) translateY(-25px); /* Player ko seedha khada karna */
+    }
+</style>
