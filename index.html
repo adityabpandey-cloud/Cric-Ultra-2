@@ -1,58 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CRIC-ULTRA 26 | 360 3D VIEW</title>
+    <title>CRIC-ULTRA 26 | CINEMATIC RENDER</title>
+    <!-- Three.js with High-End Extensions -->
     <script src="https://cloudflare.com"></script>
-    <script src="https://jsdelivr.net"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000b1e; }
-        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: #00d2ff; font-family: sans-serif; pointer-events: none; z-index: 10; }
+        body { margin: 0; background: #000; overflow: hidden; }
+        #ui { position: absolute; bottom: 30px; width: 100%; text-align: center; color: #00d2ff; font-family: 'Arial Black', sans-serif; z-index: 10; text-shadow: 0 0 15px #00d2ff; }
     </style>
 </head>
 <body>
-    <div id="ui"><h1>🏏 CRIC-ULTRA 26</h1><p>360° VIEW ACTIVE: DRAG TO ROTATE</p></div>
+    <div id="ui">
+        <h1>🏏 CRIC-ULTRA 26</h1>
+        <p>ULTRA GRAPHICS: CINEMATIC ZOOM & PBR SHADERS ACTIVE</p>
+    </div>
     <script>
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000b1e);
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        scene.fog = new THREE.FogExp2(0x000b1e, 0.02); // Stadium Mist (Fog) for Depth
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // RC Style Dynamic Shadows
         document.body.appendChild(renderer.domElement);
 
-        // Lights
-        const light = new THREE.AmbientLight(0xffffff, 1.2);
-        scene.add(light);
+        // 1. RC STYLE LIGHTING (Stadium Floodlights)
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        scene.add(hemiLight);
+        
+        const spotLight = new THREE.SpotLight(0xffffff, 2);
+        spotLight.position.set(15, 40, 35);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
 
-        // 3D Stadium & Pitch
-        const groundGeo = new THREE.CircleGeometry(20, 64);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x228B22 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        scene.add(ground);
-
-        const pitchGeo = new THREE.PlaneGeometry(4, 15);
-        const pitchMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c });
-        const pitch = new THREE.Mesh(pitchGeo, pitchMat);
+        // 2. REALISTIC PITCH (Detailed Texture Look)
+        const pitch = new THREE.Mesh(
+            new THREE.PlaneGeometry(5, 22),
+            new THREE.MeshStandardMaterial({ color: 0xba9a7b, roughness: 1, metalness: 0 })
+        );
         pitch.rotation.x = -Math.PI / 2;
-        pitch.position.y = 0.01;
+        pitch.position.y = 0.05;
         scene.add(pitch);
 
-        // 3D Player Body
-        const pGeo = new THREE.CapsuleGeometry(0.4, 1, 4, 8);
-        const pMat = new THREE.MeshStandardMaterial({ color: 0x00d2ff });
-        const player = new THREE.Mesh(pGeo, pMat);
-        player.position.y = 1;
+        // 3. 3D BATTING PLAYER (Advanced Capsule Mesh)
+        const player = new THREE.Group();
+        const body = new THREE.Mesh(
+            new THREE.CapsuleGeometry(0.5, 1.2, 8, 16),
+            new THREE.MeshStandardMaterial({ color: 0x00d2ff, roughness: 0.5, metalness: 0.2 })
+        );
+        body.castShadow = true;
+        
+        const bat = new THREE.Mesh(
+            new THREE.BoxGeometry(0.2, 1.6, 0.1),
+            new THREE.MeshStandardMaterial({ color: 0x8B4513 })
+        );
+        bat.position.set(0.6, -0.2, 0.6);
+        bat.rotation.z = -0.4; // Batting Stance Angle
+
+        player.add(body); player.add(bat);
+        player.position.y = 1.35;
         scene.add(player);
 
-        camera.position.set(0, 10, 20);
-        
-        // --- 360° Controls ---
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
+        // 4. CINEMATIC CAMERA (RC Intro Zoom)
+        camera.position.set(0, 4, 25);
+        camera.lookAt(0, 2, 0);
 
         function animate() {
             requestAnimationFrame(animate);
-            controls.update();
+            // Dynamic Zoom-in Effect
+            if(camera.position.z > 14) camera.position.z -= 0.05; 
             renderer.render(scene, camera);
         }
         animate();
