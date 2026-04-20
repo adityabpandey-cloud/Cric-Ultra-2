@@ -1,49 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CRIC-ULTRA 26 | 3D ENGINE</title>
+    <title>CRIC-ULTRA 26 | 3D STADIUM</title>
     <script src="https://cloudflare.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        #ui { position: absolute; top: 20px; width: 100%; text-align: center; color: #00d2ff; font-family: Arial; pointer-events: none; }
+        body { margin: 0; overflow: hidden; background: #000b1e; }
+        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: #00d2ff; font-family: 'Segoe UI', sans-serif; pointer-events: none; text-shadow: 0 0 10px #00d2ff; }
     </style>
 </head>
 <body>
     <div id="ui">
         <h1>🏏 CRIC-ULTRA 26</h1>
-        <p>3D STADIUM ENGINE INITIALIZED | FPS: 60</p>
+        <p>STADIUM: WANKHEDE (3D RENDER) | STATUS: LIVE</p>
     </div>
     <script>
-        // 3D Scene Setup
+        // 1. Scene & Renderer Setup
         const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000b1e); // Dark Blue Sky
+
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Green Grass Pitch (Maidan)
-        const geometry = new THREE.PlaneGeometry(100, 100);
-        const material = new THREE.MeshBasicMaterial({ color: 0x113300, side: THREE.DoubleSide });
-        const ground = new THREE.Mesh(geometry, material);
-        ground.rotation.x = Math.PI / 2;
+        // 2. Lights (Stadium Floodlights)
+        const light = new THREE.AmbientLight(0xffffff, 1); // Full light
+        scene.add(light);
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // 3. Green Ground (Maidan)
+        const groundGeo = new THREE.CircleGeometry(50, 64);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x1a5e1a }); // Deep Grass Green
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
         scene.add(ground);
 
-        // Player Placeholder (3D Humanoid Body)
-        const playerGeo = new THREE.BoxGeometry(1, 2, 1);
-        const playerMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff });
+        // 4. Player Placeholder (Blue Body)
+        const playerGeo = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
+        const playerMat = new THREE.MeshStandardMaterial({ color: 0x00d2ff });
         const player = new THREE.Mesh(playerGeo, playerMat);
-        player.position.y = 1;
+        player.position.y = 1.2;
         scene.add(player);
 
-        camera.position.z = 10;
-        camera.position.y = 5;
-        camera.lookAt(0,0,0);
+        camera.position.set(0, 3, 8);
+        camera.lookAt(0, 1, 0);
 
+        // 5. Animation Loop
         function animate() {
             requestAnimationFrame(animate);
+            player.rotation.y += 0.01; // Player ko ghumao (Visual check)
             renderer.render(scene, camera);
         }
         animate();
+
+        // Window Resize fix
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
     </script>
 </body>
 </html>
