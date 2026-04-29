@@ -3,45 +3,71 @@
 <head>
     <title>Cric-Ultra 3D</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; } /* Sky Blue */
+        body { margin: 0; overflow: hidden; background: #87CEEB; } /* Sky Blue background */
     </style>
 </head>
 <body>
+    <!-- This loads the 3D Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
     <script>
-        // 1. Setup the World
+        // 1. Create the 3D World
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // 2. Add the Pitch (Green Grass)
-        const pitchGeo = new THREE.PlaneGeometry(20, 100);
-        const pitchMat = new THREE.MeshBasicMaterial({ color: 0x228B22 }); // Forest Green
-        const pitch = new THREE.Mesh(pitchGeo, pitchMat);
-        pitch.rotation.x = -Math.PI / 2; // Lay it flat
+        // 2. Create the Green Pitch
+        const pitch = new THREE.Mesh(
+            new THREE.PlaneGeometry(20, 100),
+            new THREE.MeshBasicMaterial({ color: 0x228B22 }) // Grass Green
+        );
+        pitch.rotation.x = -Math.PI / 2;
         scene.add(pitch);
 
-        // 3. Add the Cricket Ball (Red)
-        const ballGeo = new THREE.SphereGeometry(0.2, 32, 32);
-        const ballMat = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Red
-        const ball = new THREE.Mesh(ballGeo, ballMat);
-        ball.position.y = 0.2; // Place it on top of grass
+        // 3. Create the Red Ball
+        const ball = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0xff0000 }) // Red
+        );
+        ball.position.y = 0.2;
         scene.add(ball);
 
-        camera.position.set(0, 5, 10);
-        camera.lookAt(0, 0, 0);
+        // 4. Create the Wickets (3 Stumps)
+        const stumpGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 32);
+        const stumpMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // White
+        for(let i = -1; i <= 1; i++) {
+            const stump = new THREE.Mesh(stumpGeo, stumpMat);
+            stump.position.set(i * 0.2, 0.5, -20);
+            scene.add(stump);
+        }
 
-        // 4. Make it move!
-        let speed = 0.2;
+        camera.position.set(0, 3, 5);
+        camera.lookAt(0, 0, -10);
+
+        // 5. The Game Loop (Animation)
         function animate() {
             requestAnimationFrame(animate);
-            ball.position.z -= speed; // The ball rolls down the pitch
-            if (ball.position.z < -50) ball.position.z = 10; // Reset ball
+            
+            // Move the ball toward the wickets
+            ball.position.z -= 0.15; 
+            
+            // If the ball goes past the wickets, reset it
+            if (ball.position.z < -25) {
+                ball.position.z = 5; 
+            }
+            
             renderer.render(scene, camera);
         }
         animate();
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
     </script>
 </body>
 </html>
