@@ -1,34 +1,75 @@
-// 1. Camera ko niche lao (Batsman POV)
-camera.position.set(0, 2, 10); 
-camera.lookAt(0, 1, -5);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cricket Stadium - 3D View</title>
+    <style>
+        /* पूरi स्क्रीन कवर करने के लिए */
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
 
-// 2. Realistic Grass (Using a valid texture and Standard Material)
-const grassLoader = new THREE.TextureLoader();
-// Using a reliable sample texture from Three.js examples
-const grassTex = grassLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-grassTex.repeat.set(10, 20);
+    <!-- 1. Three.js Library लोड करना (सबसे ज़रूरी) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-// Note: In your original script, the green area was named 'pitch'
-// We'll update its material to standard to react to light
-if (pitch) {
-    pitch.material = new THREE.MeshStandardMaterial({ map: grassTex });
-}
+    <script>
+        // 2. Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Sky Blue
 
-// 3. Brown Pitch (The actual batting strip)
-const pitchGeo = new THREE.PlaneGeometry(3, 20);
-const pitchMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Sandy Brown
-const battingPitch = new THREE.Mesh(pitchGeo, pitchMat);
-battingPitch.rotation.x = -Math.PI / 2;
-battingPitch.position.y = 0.02; // Small offset to prevent Z-fighting (flickering)
-battingPitch.position.z = -5;   // Positioned in front of wickets
-scene.add(battingPitch);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-// 4. Sky aur Lighting (Essential for MeshStandardMaterial)
-scene.background = new THREE.Color(0x87CEEB); // Sky Blue
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
+        // 3. Lighting (ताकि चीजें काली न दिखें)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        sunLight.position.set(5, 10, 7.5);
+        scene.add(sunLight);
 
-const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-sunLight.position.set(5, 10, 7.5);
-scene.add(sunLight);
+        // 4. Realistic Grass
+        const grassLoader = new THREE.TextureLoader();
+        const grassTex = grassLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+        grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
+        grassTex.repeat.set(10, 20);
+
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(100, 100),
+            new THREE.MeshStandardMaterial({ map: grassTex })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        // 5. Brown Pitch (Batting Strip)
+        const pitchGeo = new THREE.PlaneGeometry(3, 20);
+        const pitchMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const battingPitch = new THREE.Mesh(pitchGeo, pitchMat);
+        battingPitch.rotation.x = -Math.PI / 2;
+        battingPitch.position.y = 0.02; // Z-fighting से बचने के लिए
+        battingPitch.position.z = -5;
+        scene.add(battingPitch);
+
+        // 6. Camera Position (Batsman POV)
+        camera.position.set(0, 2, 10); 
+        camera.lookAt(0, 1, -5);
+
+        // 7. Render Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Window resize handle
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
