@@ -1,68 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Cric-Ultra 3D</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistic Cricket Scene</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; } /* Sky Blue background */
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
-    <!-- This loads the 3D Engine -->
+
+    <!-- Load Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
+
     <script>
-        // 1. Create the 3D World
+        // 1. Scene Setup
         const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Sky Blue
+
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // 2. Create the Green Pitch
-        const pitch = new THREE.Mesh(
-            new THREE.PlaneGeometry(20, 100),
-            new THREE.MeshBasicMaterial({ color: 0x228B22 }) // Grass Green
-        );
+        // 2. Lighting (Essential for realistic materials)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        sunLight.position.set(5, 15, 10);
+        scene.add(sunLight);
+
+        // 3. Realistic Grass (Ground)
+        const loader = new THREE.TextureLoader();
+        const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+        grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
+        grassTex.repeat.set(15, 15);
+
+        const groundGeo = new THREE.PlaneGeometry(100, 100);
+        const groundMat = new THREE.MeshStandardMaterial({ map: grassTex });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        // 4. Brown Pitch (Batting Strip)
+        const pitchGeo = new THREE.PlaneGeometry(3, 20);
+        const pitchMat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 });
+        const pitch = new THREE.Mesh(pitchGeo, pitchMat);
         pitch.rotation.x = -Math.PI / 2;
+        pitch.position.y = 0.01; // Slightly above grass
         scene.add(pitch);
 
-        // 3. Create the Red Ball
-        const ball = new THREE.Mesh(
-            new THREE.SphereGeometry(0.2, 32, 32),
-            new THREE.MeshBasicMaterial({ color: 0xff0000 }) // Red
-        );
-        ball.position.y = 0.2;
-        scene.add(ball);
-
-        // 4. Create the Wickets (3 Stumps)
+        // 5. Wickets
         const stumpGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 32);
-        const stumpMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); // White
+        const stumpMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
         for(let i = -1; i <= 1; i++) {
             const stump = new THREE.Mesh(stumpGeo, stumpMat);
-            stump.position.set(i * 0.2, 0.5, -20);
+            stump.position.set(i * 0.2, 0.5, -10);
             scene.add(stump);
         }
 
-        camera.position.set(0, 3, 5);
-        camera.lookAt(0, 0, -10);
+        // 6. Camera Position (Batsman POV)
+        camera.position.set(0, 2, 10); 
+        camera.lookAt(0, 1, -5);
 
-        // 5. The Game Loop (Animation)
+        // 7. Animation Loop
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Move the ball toward the wickets
-            ball.position.z -= 0.15; 
-            
-            // If the ball goes past the wickets, reset it
-            if (ball.position.z < -25) {
-                ball.position.z = 5; 
-            }
-            
             renderer.render(scene, camera);
         }
         animate();
 
-        // Handle window resizing
+        // Handle Resizing
         window.addEventListener('resize', () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
