@@ -3,117 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCB vs RR - Virtual Stadium</title>
+    <title>RCB vs RR Virtual Stadium</title>
     <style>
         body { margin: 0; overflow: hidden; background: #000; }
-        canvas { display: block; }
+        #game-container { width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
+    <div id="game-container"></div>
 
+    <!-- Load Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        // 1. Scene & Lighting Setup
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); 
+        // Check if Three.js loaded
+        if (typeof THREE === 'undefined') {
+            document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:50px;'>Error: Three.js could not load. Check your internet!</h2>";
+        } else {
+            initGame();
+        }
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        function initGame() {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Sky Blue
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('game-container').appendChild(renderer.domElement);
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        sunLight.position.set(5, 15, 10);
-        scene.add(sunLight);
+            // 1. Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambient);
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            sun.position.set(10, 20, 10);
+            scene.add(sun);
 
-        // 2. Ground & Pitch
-        const loader = new THREE.TextureLoader();
-        const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-        grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-        grassTex.repeat.set(15, 15);
-
-        const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ map: grassTex }));
-        ground.rotation.x = -Math.PI / 2;
-        scene.add(ground);
-
-        const pitch = new THREE.Mesh(new THREE.PlaneGeometry(3, 20), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
-        pitch.rotation.x = -Math.PI / 2;
-        pitch.position.y = 0.01;
-        scene.add(pitch);
-
-        // 3. Team Design Logic
-        const teams = {
-            RCB: { main: 0xcc0000, secondary: 0xffd700 }, // Red & Gold
-            RR: { main: 0xff69b4, secondary: 0x004ba0 }   // Pink & Blue
-        };
-
-        // 4. Player Creator
-        function createSquadPlayer(x, z, teamName, isBatting = false) {
-            const pGroup = new THREE.Group();
-            const colors = teams[teamName];
-            
-            const torso = new THREE.Mesh(
-                new THREE.CapsuleGeometry(0.4, 1.2, 4, 12),
-                new THREE.MeshStandardMaterial({ color: colors.main })
+            // 2. Ground & Pitch
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(150, 150),
+                new THREE.MeshStandardMaterial({ color: 0x228B22 }) // Grass
             );
-            pGroup.add(torso);
+            ground.rotation.x = -Math.PI / 2;
+            scene.add(ground);
 
-            const strips = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.1, 0.45), new THREE.MeshStandardMaterial({ color: colors.secondary }));
-            strips.position.y = 0.5;
-            pGroup.add(strips);
+            const pitch = new THREE.Mesh(
+                new THREE.PlaneGeometry(3, 22),
+                new THREE.MeshStandardMaterial({ color: 0x8B4513 }) // Brown
+            );
+            pitch.rotation.x = -Math.PI / 2;
+            pitch.position.y = 0.05;
+            scene.add(pitch);
 
-            if(isBatting) {
-                const bat = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.5, 0.1), new THREE.MeshStandardMaterial({color: 0x8B4513}));
-                bat.position.set(0.6, -0.2, 0.5); 
-                bat.rotation.z = -0.4;
-                pGroup.add(bat);
+            // 3. Boundary Rope
+            const rope = new THREE.Mesh(
+                new THREE.TorusGeometry(35, 0.3, 16, 100),
+                new THREE.MeshStandardMaterial({ color: 0xffffff })
+            );
+            rope.rotation.x = Math.PI / 2;
+            rope.position.y = 0.1;
+            scene.add(rope);
+
+            // 4. Players
+            function createPlayer(x, z, color, isBatting = false) {
+                const group = new THREE.Group();
+                const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.2), new THREE.MeshStandardMaterial({ color }));
+                group.add(body);
+                
+                if(isBatting) {
+                    const bat = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.5, 0.1), new THREE.MeshStandardMaterial({color: 0x5C4033}));
+                    bat.position.set(0.6, -0.2, 0.5); bat.rotation.z = -0.4;
+                    group.add(bat);
+                }
+                group.position.set(x, 1, z);
+                scene.add(group);
             }
 
-            pGroup.position.set(x, 1, z);
-            scene.add(pGroup);
+            // RR Team (Pink)
+            createPlayer(0, -10, 0xff69b4); // Bowler
+            for(let i=0; i<10; i++) {
+                let a = (i/10) * Math.PI * 2;
+                createPlayer(Math.cos(a)*30, Math.sin(a)*30, 0xff69b4);
+            }
+
+            // RCB Team (Red)
+            createPlayer(0, 8, 0xcc0000, true); // Batsman
+
+            // 5. Camera View (Far view to see boundary)
+            camera.position.set(0, 25, 50);
+            camera.lookAt(0, 0, 0);
+
+            // 6. Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Resize handle
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            });
         }
-
-        // 5. Stadium Elements
-        const rope = new THREE.Mesh(new THREE.TorusGeometry(35, 0.2, 16, 100), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-        rope.rotation.x = Math.PI / 2; 
-        rope.position.y = 0.1;
-        scene.add(rope);
-
-        const dugout = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 5), new THREE.MeshStandardMaterial({ color: 0x111111, transparent: true, opacity: 0.7 }));
-        dugout.position.set(0, 2, -45); 
-        scene.add(dugout);
-
-        // 6. Placement
-        createSquadPlayer(0, -9, 'RR'); // Bowler
-        for(let i=0; i<10; i++) { 
-            let angle = (i / 10) * Math.PI * 2;
-            createSquadPlayer(Math.cos(angle)*25, Math.sin(angle)*25, 'RR');
-        }
-
-        createSquadPlayer(0, 8, 'RCB', true); // Virat on Strike
-        for(let i=0; i<5; i++) { 
-            createSquadPlayer(-3 + i, -45, 'RCB'); 
-        }
-
-        // 7. Camera (Batsman POV)
-        camera.position.set(0, 3, 15); 
-        camera.lookAt(0, 1, 0);
-
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-        });
     </script>
 </body>
 </html>
