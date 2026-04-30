@@ -3,104 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCB vs RR Virtual Stadium</title>
+    <title>Cricket Stadium Fix</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        #game-container { width: 100vw; height: 100vh; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
+        #status { color: white; position: fixed; top: 10px; left: 10px; z-index: 100; }
     </style>
 </head>
 <body>
-    <div id="game-container"></div>
+    <div id="status">Connecting to Stadium...</div>
 
-    <!-- Load Three.js Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- USING ALTERNATIVE CDN (UNPKG) -->
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
 
     <script>
-        // Check if Three.js loaded
-        if (typeof THREE === 'undefined') {
-            document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:50px;'>Error: Three.js could not load. Check your internet!</h2>";
-        } else {
-            initGame();
-        }
+        // Check if library loaded after a small delay
+        window.addEventListener('load', () => {
+            if (typeof THREE === 'undefined') {
+                document.getElementById('status').innerHTML = "<b style='color:red'>ERROR: All servers blocked.</b><br>1. Check Internet<br>2. Disable AdBlocker";
+            } else {
+                startMatch();
+            }
+        });
 
-        function initGame() {
+        function startMatch() {
+            document.getElementById('status').style.display = 'none';
+
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // Sky Blue
+            scene.background = new THREE.Color(0x87CEEB);
 
             const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('game-container').appendChild(renderer.domElement);
+            document.body.appendChild(renderer.domElement);
 
-            // 1. Lighting
-            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+            // Light
+            const ambient = new THREE.AmbientLight(0xffffff, 1);
             scene.add(ambient);
-            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-            sun.position.set(10, 20, 10);
-            scene.add(sun);
 
-            // 2. Ground & Pitch
+            // Ground & Pitch
             const ground = new THREE.Mesh(
-                new THREE.PlaneGeometry(150, 150),
-                new THREE.MeshStandardMaterial({ color: 0x228B22 }) // Grass
+                new THREE.PlaneGeometry(200, 200),
+                new THREE.MeshBasicMaterial({ color: 0x228B22 })
             );
             ground.rotation.x = -Math.PI / 2;
             scene.add(ground);
 
             const pitch = new THREE.Mesh(
                 new THREE.PlaneGeometry(3, 22),
-                new THREE.MeshStandardMaterial({ color: 0x8B4513 }) // Brown
+                new THREE.MeshBasicMaterial({ color: 0x8B4513 })
             );
             pitch.rotation.x = -Math.PI / 2;
-            pitch.position.y = 0.05;
+            pitch.position.y = 0.02;
             scene.add(pitch);
 
-            // 3. Boundary Rope
-            const rope = new THREE.Mesh(
-                new THREE.TorusGeometry(35, 0.3, 16, 100),
-                new THREE.MeshStandardMaterial({ color: 0xffffff })
-            );
-            rope.rotation.x = Math.PI / 2;
-            rope.position.y = 0.1;
-            scene.add(rope);
-
-            // 4. Players
-            function createPlayer(x, z, color, isBatting = false) {
-                const group = new THREE.Group();
-                const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.2), new THREE.MeshStandardMaterial({ color }));
-                group.add(body);
-                
-                if(isBatting) {
-                    const bat = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.5, 0.1), new THREE.MeshStandardMaterial({color: 0x5C4033}));
-                    bat.position.set(0.6, -0.2, 0.5); bat.rotation.z = -0.4;
-                    group.add(bat);
-                }
-                group.position.set(x, 1, z);
-                scene.add(group);
+            // Simple Players
+            function addPlayer(x, z, color) {
+                const p = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1.2), new THREE.MeshBasicMaterial({ color }));
+                p.position.set(x, 1, z);
+                scene.add(p);
             }
 
-            // RR Team (Pink)
-            createPlayer(0, -10, 0xff69b4); // Bowler
-            for(let i=0; i<10; i++) {
-                let a = (i/10) * Math.PI * 2;
-                createPlayer(Math.cos(a)*30, Math.sin(a)*30, 0xff69b4);
-            }
+            addPlayer(0, -10, 0xff69b4); // RR
+            addPlayer(0, 8, 0xcc0000);   // RCB
 
-            // RCB Team (Red)
-            createPlayer(0, 8, 0xcc0000, true); // Batsman
-
-            // 5. Camera View (Far view to see boundary)
-            camera.position.set(0, 25, 50);
+            // Camera View
+            camera.position.set(0, 40, 50);
             camera.lookAt(0, 0, 0);
 
-            // 6. Animation
             function animate() {
                 requestAnimationFrame(animate);
                 renderer.render(scene, camera);
             }
             animate();
 
-            // Resize handle
             window.addEventListener('resize', () => {
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 camera.aspect = window.innerWidth / window.innerHeight;
