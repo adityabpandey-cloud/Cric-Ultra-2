@@ -16,7 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <div id="msg">Preparing Stadium...</div>
+    <div id="msg">Starting Engine...</div>
 
     <script>
         // 1. ENGINE & ATMOSPHERE
@@ -30,24 +30,24 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Real-world light look
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; 
         renderer.toneMappingExposure = 1.1;
         document.body.appendChild(renderer.domElement);
 
-        // 2. STADIUM LIGHTING & REFLECTIONS
+        // 2. STADIUM LIGHTING
         const sun = new THREE.DirectionalLight(0xffffff, 1.3);
         sun.position.set(30, 50, 30);
         sun.castShadow = true;
-        sun.shadow.mapSize.width = 4096; // Ultra-sharp shadows
-        sun.shadow.mapSize.height = 4096;
+        sun.shadow.mapSize.width = 2048; 
+        sun.shadow.mapSize.height = 2048;
         scene.add(sun);
         scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
-        // Create environment reflections (makes human skin/clothes look real)
+        // Reflections
         const pmrem = new THREE.PMREMGenerator(renderer);
         scene.environment = pmrem.fromScene(new THREE.Scene()).texture;
 
-        // 3. FIELD & PITCH TEXTURES
+        // 3. FIELD TEXTURES
         const texLoader = new THREE.TextureLoader();
         const grassTex = texLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
         grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
@@ -70,40 +70,42 @@
         pitch.receiveShadow = true;
         scene.add(pitch);
 
-        // 4. HUMAN PLAYER LOADING
+        // 4. HUMAN PLAYER LOADING WITH PROGRESS BAR
         let player, mixer;
         const loader = new THREE.GLTFLoader();
-        // This is a high-quality human character URL
-        loader.load('https://models.readyplayer.me/648827725514f49451184d0a.glb', (gltf) => {
-            player = gltf.scene;
-            player.scale.set(1.4, 1.4, 1.4);
-            player.position.set(0, 0, 8);
-            
-            player.traverse(n => { 
-                if(n.isMesh) {
-                    n.castShadow = true;
-                    n.material.roughness = 0.6; // Realistic skin/cloth
-                }
-            });
-            scene.add(player);
-            
-            mixer = new THREE.AnimationMixer(player);
-            // Play first human animation if available
-            if(gltf.animations.length > 0) {
-                mixer.clipAction(gltf.animations[0]).play();
+        
+        loader.load('https://models.readyplayer.me/648827725514f49451184d0a.glb', 
+            (gltf) => {
+                // SUCCESS LOGIC
+                player = gltf.scene;
+                player.scale.set(1.4, 1.4, 1.4);
+                player.position.set(0, 0, 8);
+                player.traverse(n => { if(n.isMesh) { n.castShadow = true; n.material.roughness = 0.6; } });
+                scene.add(player);
+                
+                mixer = new THREE.AnimationMixer(player);
+                if(gltf.animations.length > 0) mixer.clipAction(gltf.animations[0]).play();
+                
+                document.getElementById('msg').innerHTML = "READY! WASD to Move";
+            },
+            (xhr) => {
+                // PROGRESS LOGIC
+                const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                document.getElementById('msg').innerHTML = "Downloading Human: " + percent + "%";
+            },
+            (error) => {
+                // ERROR LOGIC
+                document.getElementById('msg').innerHTML = "Error loading model. Check console.";
             }
-            document.getElementById('msg').innerHTML = "READY: Use WASD to Walk";
-        });
+        );
 
         // 5. CAMERA & INPUTS
         camera.position.set(0, 5, 16); 
-        camera.lookAt(0, 2, 0);
-
         const keys = {};
         window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
         window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
 
-        // 6. GAME LOOP
+        // 6. LOOP
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
@@ -115,7 +117,6 @@
                 if(keys['w']) player.position.z -= 0.08;
                 if(keys['s']) player.position.z += 0.08;
                 
-                // Camera smoothly follows player
                 camera.position.x += (player.position.x - camera.position.x) * 0.05;
                 camera.lookAt(player.position.x, 1.5, player.position.z);
             }
@@ -132,3 +133,4 @@
     </script>
 </body>
 </html>
+
