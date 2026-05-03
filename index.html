@@ -65,7 +65,12 @@
                 }
             });
             scene.add(player);
-
+// Replace the existing loader.load call:
+loader.load('path/to/your/virat_kohli_model.glb', (gltf) => {
+    const model = gltf.scene;
+    scene.add(model);
+    // ... rest of your animation logic
+});
             // Add a simple "Bat" (Cube placeholder) to his hand
             const bat = new THREE.Mesh(
                 new THREE.BoxGeometry(0.1, 0.8, 0.2),
