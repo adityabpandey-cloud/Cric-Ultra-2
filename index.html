@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Virat Kohli - RCB Ultra Realistic Edition</title>
+    <title>Virat Kohli - RCB Ultra Edition (Clean Code)</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #msg { 
@@ -12,60 +12,65 @@
         }
         #vignette {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.4) 100%);
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.5) 100%);
             pointer-events: none; z-index: 50;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Using the latest stable Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r158/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158/examples/jsm/loaders/GLTFLoader.js"></script>
 </head>
 <body>
     <div id="vignette"></div>
-    <div id="msg">RCB KIT - VIRAT KOHLI EDITION</div>
+    <div id="msg">RCB KIT - VIRAT KOHLI READY</div>
 
-    <script>
+    <script type="module">
+        // Using Type Module for modern Three.js support
+        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.158/examples/jsm/loaders/GLTFLoader.js';
+
         const clock = new THREE.Clock();
         const scene = new THREE.Scene();
-        
-        // 1. STADIUM ENVIRONMENT
         scene.background = new THREE.Color(0x87CEEB); 
-        scene.fog = new THREE.Fog(0x87CEEB, 25, 120);
+        scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        // MODERN SETTINGS (Fixes Warnings)
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         
-        // CINEMATIC POST-PROCESSING
+        // Use ColorSpace instead of Encoding (Latest Standard)
+        renderer.outputColorSpace = THREE.SRGBColorSpace; 
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.25;
-        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMappingExposure = 1.2;
         
         document.body.appendChild(renderer.domElement);
 
-        // 2. LIGHTING (Stadium Sun)
-        const sun = new THREE.DirectionalLight(0xffffff, 1.8);
-        sun.position.set(20, 50, 20);
+        // STADIUM LIGHTING
+        const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+        sun.position.set(10, 40, 20);
         sun.castShadow = true;
-        sun.shadow.mapSize.width = 4096; // High res shadows
-        sun.shadow.mapSize.height = 4096;
+        sun.shadow.mapSize.set(2048, 2048);
         scene.add(sun);
 
-        const fillLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(fillLight);
+        const amb = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(amb);
 
-        // 3. PITCH & FIELD
-        const grassMat = new THREE.MeshStandardMaterial({ color: 0x2d5a27, roughness: 1 });
-        const field = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), grassMat);
-        field.rotation.x = -Math.PI / 2;
-        field.receiveShadow = true;
-        scene.add(field);
+        // GRASS
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(200, 200),
+            new THREE.MeshStandardMaterial({ color: 0x347c2c, roughness: 1 })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
 
-        // 4. PLAYER & RCB KIT LOGIC
+        // RCB PLAYER
         let player, mixer;
-        const loader = new THREE.GLTFLoader();
+        const loader = new GLTFLoader();
         
         loader.load('https://threejs.org/examples/models/gltf/Xbot.glb', (gltf) => {
             player = gltf.scene;
@@ -74,42 +79,28 @@
             player.traverse(node => {
                 if(node.isMesh) {
                     node.castShadow = true;
-                    
-                    // APPLY RCB COLORS
-                    // We target specific parts of the mannequin to simulate a kit
+                    // Improved Material Logic for RCB Red/Black
                     if(node.name.includes('Surface')) {
-                        // Main Body -> RCB Red
                         node.material = new THREE.MeshStandardMaterial({
-                            color: 0x9e0b0b, // RCB Deep Red
-                            roughness: 0.6,
-                            metalness: 0.1
+                            color: 0xcc0000, // Vibrant RCB Red
+                            roughness: 0.5,
+                            metalness: 0.2
                         });
-                    } else if(node.name.includes('Joints')) {
-                        // Joints/Pants -> RCB Black
+                    } else {
                         node.material = new THREE.MeshStandardMaterial({
-                            color: 0x111111, // Carbon Black
-                            roughness: 0.8
+                            color: 0x111111, // RCB Black Pants/Joints
+                            roughness: 0.7
                         });
                     }
                 }
             });
             scene.add(player);
 
-            // Realistic Bat
-            const bat = new THREE.Mesh(
-                new THREE.BoxGeometry(0.12, 0.9, 0.15),
-                new THREE.MeshStandardMaterial({ color: 0x4b3621, roughness: 0.7 })
-            );
-            bat.position.set(0.4, 0.7, 0.2);
-            player.add(bat);
-
-            // Animation
             mixer = new THREE.AnimationMixer(player);
-            if(gltf.animations[0]) mixer.clipAction(gltf.animations[0]).play();
+            if(gltf.animations.length > 0) mixer.clipAction(gltf.animations[0]).play();
         });
 
-        // 5. CAMERA (Broadcast View)
-        camera.position.set(0, 2.5, 9); 
+        camera.position.set(0, 2, 10);
         camera.lookAt(0, 1.8, 0);
 
         function animate() {
