@@ -2,92 +2,107 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cric Ultra - RC24 Edition</title>
+    <title>Virat Kohli - RC24 Ultra Edition</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #msg { 
             position: absolute; color: white; top: 20px; width: 100%; 
-            text-align: center; z-index: 100; text-shadow: 2px 2px 5px rgba(0,0,0,0.7);
-            font-size: 1.5rem; font-weight: bold;
+            text-align: center; z-index: 100; text-shadow: 2px 2px 10px rgba(0,0,0,0.9);
+            font-size: 1.8rem; font-weight: bold; letter-spacing: 2px;
+        }
+        /* Added a vignette effect for that RC24 cinematic look */
+        #vignette {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.5); pointer-events: none; z-index: 50;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <div id="msg">Loading RC24 Style Player...</div>
+    <div id="vignette"></div>
+    <div id="msg">VIRAT KOHLI - RC24 READY</div>
 
     <script>
         const clock = new THREE.Clock();
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // Bright Sky Blue
-        scene.fog = new THREE.Fog(0x87CEEB, 30, 100);
+        
+        // 1. SKY & FOG (Atmospheric realism)
+        scene.background = new THREE.Color(0x87CEEB); 
+        scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
 
-        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic colors like RC24
-        renderer.toneMappingExposure = 1.3;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        // RC24 COLOR GRADING
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        
         document.body.appendChild(renderer.domElement);
 
-        // 1. STADIUM LIGHTING (Bright Sun like the photo)
-        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
-        sun.position.set(10, 30, 10);
+        // 2. STADIUM LIGHTING
+        const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+        sun.position.set(15, 40, 20);
         sun.castShadow = true;
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
         scene.add(sun);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.6)); // Soft fill light
 
-        // 2. VIBRANT GRASS (Matching your photo's color)
-        const outfield = new THREE.Mesh(
-            new THREE.PlaneGeometry(300, 300), 
-            new THREE.MeshStandardMaterial({ color: 0x4fb32a, roughness: 0.8 }) // Bright RC24 Green
-        );
+        const ambient = new THREE.AmbientLight(0x404040, 1.5); // Boosted fill light
+        scene.add(ambient);
+
+        // 3. PITCH & GRASS
+        const grassMat = new THREE.MeshStandardMaterial({ color: 0x3a8e1d, roughness: 0.9 });
+        const outfield = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), grassMat);
         outfield.rotation.x = -Math.PI / 2;
         outfield.receiveShadow = true;
         scene.add(outfield);
 
-        // 3. HUMAN PLAYER LOAD
+        // 4. LOADING THE PLAYER
         let player, mixer;
         const loader = new THREE.GLTFLoader();
         
-        // Loading a Humanoid character (The 'Xbot' is a perfectly rigged human)
-        loader.load('https://threejs.org/examples/models/gltf/Xbot.glb', (gltf) => {
+        // REPLACE THIS URL with your Virat Kohli .glb file path from Sketchfab
+        const modelUrl = 'https://threejs.org/examples/models/gltf/Xbot.glb';
+
+        loader.load(modelUrl, (gltf) => {
             player = gltf.scene;
-            player.scale.set(1.8, 1.8, 1.8);
-            player.position.set(0, 0, 5);
+            player.scale.set(2, 2, 2);
+            player.position.set(0, 0, 0);
             
-            player.traverse(n => {
-                if(n.isMesh) {
-                    n.castShadow = true;
-                    // Give him a "Blue Kit" color like Team India in your photo
-                    n.material.color.set(0x1a5fb4); 
+            player.traverse(node => {
+                if(node.isMesh) {
+                    node.castShadow = true;
+                    // Apply Team India Blue to the material
+                    if(node.name.includes('Body') || node.name.includes('Mesh')) {
+                        node.material.color.set(0x003366); // Deep Royal Blue
+                    }
                 }
             });
             scene.add(player);
-// Replace the existing loader.load call:
-loader.load('path/to/your/virat_kohli_model.glb', (gltf) => {
-    const model = gltf.scene;
-    scene.add(model);
-    // ... rest of your animation logic
-});
-            // Add a simple "Bat" (Cube placeholder) to his hand
-            const bat = new THREE.Mesh(
-                new THREE.BoxGeometry(0.1, 0.8, 0.2),
-                new THREE.MeshStandardMaterial({color: 0x966F33})
-            );
-            bat.position.set(0.3, 0.5, 0.2); // Position near hand
+
+            // Add a realistic Bat
+            const batGeo = new THREE.BoxGeometry(0.12, 0.9, 0.18);
+            const batMat = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
+            const bat = new THREE.Mesh(batGeo, batMat);
+            bat.position.set(0.4, 0.6, 0.3);
             player.add(bat);
 
+            // Animations
             mixer = new THREE.AnimationMixer(player);
-            mixer.clipAction(gltf.animations[0]).play(); // Standing/Idle
-            
-            document.getElementById('msg').innerHTML = "RC24 PLAYER READY";
+            if(gltf.animations.length > 0) {
+                mixer.clipAction(gltf.animations[0]).play(); 
+            }
         });
 
-        // 4. CAMERA VIEW (Similar to your photo)
-        camera.position.set(0, 3, 12); 
-        camera.lookAt(0, 1.5, 0);
+        // 5. CAMERA PLACEMENT (Low angle for power)
+        camera.position.set(0, 2, 10); 
+        camera.lookAt(0, 1.8, 0);
 
         function animate() {
             requestAnimationFrame(animate);
@@ -95,6 +110,13 @@ loader.load('path/to/your/virat_kohli_model.glb', (gltf) => {
             if(mixer) mixer.update(delta);
             renderer.render(scene, camera);
         }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
         animate();
     </script>
 </body>
