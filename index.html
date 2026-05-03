@@ -1,67 +1,110 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Realistic Cricket Game</title>
-    <style>
-        body { margin: 0; background: #000; overflow: hidden; }
-        #msg { position: absolute; color: white; top: 10px; width: 100%; text-align: center; font-family: sans-serif; }
-    </style>
-</head>
-<body>
-    <div id="msg">SPACE TO BOWL | CLICK TO HIT | A/D TO MOVE</div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script>
-        // 1. Scene Setup
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+<script>
+    // 1. SETUP & ENGINE
+    const clock = new THREE.Clock();
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB);
+    
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true; 
+    document.body.appendChild(renderer.domElement);
 
-        // 2. Lights
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 10, 5);
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    // 2. STADIUM LIGHTS (RC 24 Style)
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    sun.position.set(10, 20, 10);
+    sun.castShadow = true;
+    scene.add(sun);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
-        // 3. Pitch & Grass
-        const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({color: 0x228B22}));
-        ground.rotation.x = -Math.PI/2;
-        scene.add(ground);
-        const pitch = new THREE.Mesh(new THREE.PlaneGeometry(3, 20), new THREE.MeshStandardMaterial({color: 0x8B4513}));
-        pitch.rotation.x = -Math.PI/2; pitch.position.y = 0.01;
-        scene.add(pitch);
+    // 3. THE PITCH (Grass & Dirt)
+    const pitch = new THREE.Mesh(
+        new THREE.PlaneGeometry(4, 25), 
+        new THREE.MeshStandardMaterial({color: 0x8B4513}) // Brown dirt
+    );
+    pitch.rotation.x = -Math.PI / 2;
+    pitch.receiveShadow = true;
+    scene.add(pitch);
 
-        // 4. Player & Ball
-        const batsman = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), new THREE.MeshStandardMaterial({color: 0xffff00}));
-        batsman.position.set(0, 0.75, 8);
-        scene.add(batsman);
-        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12), new THREE.MeshStandardMaterial({color: 0xaa0000}));
-        ball.position.set(0, 1, -8);
-        scene.add(ball);
+    const outfield = new THREE.Mesh(
+        new THREE.PlaneGeometry(200, 200), 
+        new THREE.MeshStandardMaterial({color: 0x228B22}) // Green grass
+    );
+    outfield.rotation.x = -Math.PI / 2;
+    outfield.position.y = -0.01;
+    outfield.receiveShadow = true;
+    scene.add(outfield);
 
-        // 5. Logic
-        let ballVel = new THREE.Vector3(0,0,0);
-        window.addEventListener('keydown', (e) => {
-            if(e.code === 'Space') { ball.position.set(0, 1, -8); ballVel.set(0, 0.02, 0.4); }
-            if(e.key === 'a') batsman.position.x -= 0.2;
-            if(e.key === 'd') batsman.position.x += 0.2;
-        });
-        window.addEventListener('mousedown', () => {
-            if(ball.position.distanceTo(batsman.position) < 1.5) { ballVel.set(0, 0.2, -0.6); }
-        });
+    // 4. THE PLAYER & ANIMATION
+    let player, mixer;
+    const loader = new THREE.GLTFLoader();
+    loader.load('https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb', (gltf) => {
+        player = gltf.scene;
+        player.scale.set(0.5, 0.5, 0.5);
+        player.position.set(0, 0, 10); // Standing at the crease
+        player.traverse(n => { if(n.isMesh) n.castShadow = true; });
+        scene.add(player);
+        
+        mixer = new THREE.AnimationMixer(player);
+        const idle = mixer.clipAction(gltf.animations.find(a => a.name === 'Idle'));
+        if(idle) idle.play();
+        
+        document.getElementById('msg').innerHTML = "WASD to Move | Click to Hit | Space to Bowl";
+    });
 
-        camera.position.set(0, 3, 14);
-        camera.lookAt(0, 0, 0);
+    // 5. BALL & PHYSICS (BatBallPhysics logic)
+    const ball = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12), 
+        new THREE.MeshStandardMaterial({color: 0xaa0000})
+    );
+    ball.position.set(0, 0.5, -10); // Start at bowler end
+    ball.castShadow = true;
+    scene.add(ball);
 
-        function animate() {
-            requestAnimationFrame(animate);
-            ball.position.add(ballVel);
-            if(ball.position.y > 0.12) ballVel.y -= 0.005; else ballVel.y *= -0.5;
-            renderer.render(scene, camera);
+    let ballVel = new THREE.Vector3(0, 0, 0);
+
+    // 6. CONTROLS
+    window.addEventListener('keydown', (e) => {
+        if(e.code === 'Space') { 
+            ball.position.set(0, 1, -10); 
+            ballVel.set(0, 0.05, 0.5); // Fast ball towards batsman
         }
-        animate();
-    </script>
-</body>
-</html>
+        if(e.key === 'a' && player) player.position.x -= 0.3;
+        if(e.key === 'd' && player) player.position.x += 0.3;
+    });
+
+    window.addEventListener('mousedown', () => {
+        // HIT LOGIC: Check distance between ball and player
+        if(player && ball.position.distanceTo(player.position) < 2) {
+            // Physics translation: Calculate new direction based on player X position
+            const hitDirectionX = (ball.position.x - player.position.x) * 0.5;
+            ballVel.set(hitDirectionX, 0.2, -0.6); // Hit it back!
+            document.getElementById('msg').innerHTML = "Shot Played!";
+        }
+    });
+
+    // 7. ANIMATE & CAMERA FOLLOW
+    function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        if(mixer) mixer.update(delta);
+
+        // Apply Physics
+        ball.position.add(ballVel);
+        if(ball.position.y > 0.12) ballVel.y -= 0.005; // Gravity
+        else ballVel.y *= -0.5; // Bounce
+
+        // RC 24 CAMERA: Stay behind the player
+        if(player) {
+            const relativeCameraOffset = new THREE.Vector3(0, 4, 8); // Height and distance
+            const cameraOffset = relativeCameraOffset.applyMatrix4(player.matrixWorld);
+            camera.position.x = cameraOffset.x;
+            camera.position.y = cameraOffset.y;
+            camera.position.z = cameraOffset.z;
+            camera.lookAt(ball.position); // Always track the ball
+        }
+
+        renderer.render(scene, camera);
+    }
+    animate();
+</script>
