@@ -1,68 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Realistic Cricket</title>
+    <meta charset="UTF-8">
+    <title>Realistic 3D Cricket</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; }
-        #msg { position: absolute; color: white; top: 10px; width: 100%; text-align: center; font-family: sans-serif; z-index: 10; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        #msg { 
+            position: absolute; color: white; top: 20px; width: 100%; 
+            text-align: center; z-index: 100; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none; font-size: 1.2rem;
+        }
     </style>
-    <!-- LOAD THESE FIRST -->
+    <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <div id="msg">Wait... Loading Stadium</div>
+    <div id="msg">Loading Stadium...</div>
 
     <script>
-        // THE GAME LOGIC (Paste your script here)
+        // 1. SETUP ENGINE
+        const clock = new THREE.Clock();
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
+        scene.background = new THREE.Color(0x87CEEB); // Sky Blue
+        
+        // FOG makes the distance look realistic (RC 24 style)
+        scene.fog = new THREE.Fog(0x87CEEB, 50, 150);
+
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer, better shadows
         document.body.appendChild(renderer.domElement);
 
-        // Lights
+        // 2. LIGHTING (Stadium Sun)
         const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-        sun.position.set(10, 20, 10);
+        sun.position.set(20, 40, 20);
         sun.castShadow = true;
+        sun.shadow.mapSize.width = 2048; // Sharp shadows
+        sun.shadow.mapSize.height = 2048;
         scene.add(sun);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-        // Field
-        const pitch = new THREE.Mesh(new THREE.PlaneGeometry(4, 25), new THREE.MeshStandardMaterial({color: 0x8B4513}));
-        pitch.rotation.x = -Math.PI / 2;
-        pitch.receiveShadow = true;
-        scene.add(pitch);
+        // 3. TEXTURES (The Realism Upgrade)
+        const textureLoader = new THREE.TextureLoader();
+        const grassTex = textureLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+        grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
+        grassTex.repeat.set(50, 50);
 
-        const outfield = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({color: 0x228B22}));
+        // 4. THE FIELD
+        const outfield = new THREE.Mesh(
+            new THREE.PlaneGeometry(300, 300), 
+            new THREE.MeshStandardMaterial({ map: grassTex })
+        );
         outfield.rotation.x = -Math.PI / 2;
-        outfield.position.y = -0.01;
         outfield.receiveShadow = true;
         scene.add(outfield);
 
-        // Player
+        const pitch = new THREE.Mesh(
+            new THREE.PlaneGeometry(4, 24), 
+            new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 })
+        );
+        pitch.rotation.x = -Math.PI / 2;
+        pitch.position.y = 0.01; // Slightly above grass to avoid flickering
+        pitch.receiveShadow = true;
+        scene.add(pitch);
+
+        // 5. PLAYER LOAD
         let player, mixer;
-        const clock = new THREE.Clock();
         const loader = new THREE.GLTFLoader();
         loader.load('https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb', (gltf) => {
             player = gltf.scene;
-            player.scale.set(0.5, 0.5, 0.5);
+            player.scale.set(0.6, 0.6, 0.6);
             player.position.set(0, 0, 10);
+            player.traverse(n => { if(n.isMesh) n.castShadow = true; });
             scene.add(player);
+            
             mixer = new THREE.AnimationMixer(player);
-            mixer.clipAction(gltf.animations[0]).play();
-            document.getElementById('msg').innerHTML = "WASD to move | Click to Hit";
+            mixer.clipAction(gltf.animations.find(a => a.name === 'Idle')).play();
+            document.getElementById('msg').innerHTML = "WASD to Move Player | Click to Hit";
         });
 
+        // 6. CAMERA POSITION (FIXED)
+        // This stops the "flat line" look
+        camera.position.set(0, 6, 18); 
+        camera.lookAt(0, 2, 0);
+
+        // 7. INPUTS
+        const keys = {};
+        window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
+        window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
+
+        // 8. GAME LOOP
         function animate() {
             requestAnimationFrame(animate);
-            if(mixer) mixer.update(clock.getDelta());
+            const delta = clock.getDelta();
+            
+            if(mixer) mixer.update(delta);
+
+            // Smooth Player Movement
+            if(player) {
+                if(keys['a']) player.position.x -= 0.1;
+                if(keys['d']) player.position.x += 0.1;
+                if(keys['w']) player.position.z -= 0.1;
+                if(keys['s']) player.position.z += 0.1;
+                
+                // Camera Follows Player Slightly (Smoothly)
+                camera.position.x += (player.position.x - camera.position.x) * 0.05;
+            }
+
             renderer.render(scene, camera);
         }
         animate();
+
+        // Handle Resizing
+        window.onresize = () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
     </script>
 </body>
 </html>
-
