@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Virat Kohli - RCB Ultra Edition (Clean Code)</title>
+    <title>Virat Kohli - RCB Ultra Edition</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #msg { 
@@ -12,95 +12,114 @@
         }
         #vignette {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.5) 100%);
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.6) 100%);
             pointer-events: none; z-index: 50;
         }
     </style>
-    <!-- Using the latest stable Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r158/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.158/examples/jsm/loaders/GLTFLoader.js"></script>
+
+    <!-- FIX FOR CORB ERROR: Using Import Maps -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+      }
+    }
+    </script>
 </head>
 <body>
     <div id="vignette"></div>
     <div id="msg">RCB KIT - VIRAT KOHLI READY</div>
 
     <script type="module">
-        // Using Type Module for modern Three.js support
-        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.158/examples/jsm/loaders/GLTFLoader.js';
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         const clock = new THREE.Clock();
         const scene = new THREE.Scene();
+        
+        // 1. SKY & ATMOSPHERE
         scene.background = new THREE.Color(0x87CEEB); 
-        scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+        scene.fog = new THREE.Fog(0x87CEEB, 25, 110);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         
-        // MODERN SETTINGS (Fixes Warnings)
+        // RENDERER SETTINGS
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        
-        // Use ColorSpace instead of Encoding (Latest Standard)
         renderer.outputColorSpace = THREE.SRGBColorSpace; 
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
+        renderer.toneMappingExposure = 1.3;
         
         document.body.appendChild(renderer.domElement);
 
-        // STADIUM LIGHTING
+        // 2. STADIUM LIGHTING
         const sun = new THREE.DirectionalLight(0xffffff, 2.5);
-        sun.position.set(10, 40, 20);
+        sun.position.set(15, 45, 20);
         sun.castShadow = true;
         sun.shadow.mapSize.set(2048, 2048);
         scene.add(sun);
 
-        const amb = new THREE.AmbientLight(0xffffff, 0.6);
+        const amb = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(amb);
 
-        // GRASS
+        // 3. GRASS GROUND
         const ground = new THREE.Mesh(
-            new THREE.PlaneGeometry(200, 200),
-            new THREE.MeshStandardMaterial({ color: 0x347c2c, roughness: 1 })
+            new THREE.PlaneGeometry(300, 300),
+            new THREE.MeshStandardMaterial({ color: 0x3d7e2f, roughness: 1 })
         );
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // RCB PLAYER
+        // 4. RCB PLAYER LOADING
         let player, mixer;
         const loader = new GLTFLoader();
         
+        // Using Xbot as high-quality rigged mannequin
         loader.load('https://threejs.org/examples/models/gltf/Xbot.glb', (gltf) => {
             player = gltf.scene;
-            player.scale.set(2, 2, 2);
+            player.scale.set(2.1, 2.1, 2.1);
+            player.position.set(0, 0, 0);
             
             player.traverse(node => {
                 if(node.isMesh) {
                     node.castShadow = true;
-                    // Improved Material Logic for RCB Red/Black
+                    // Applying RCB Red and Black Logic
                     if(node.name.includes('Surface')) {
                         node.material = new THREE.MeshStandardMaterial({
-                            color: 0xcc0000, // Vibrant RCB Red
-                            roughness: 0.5,
-                            metalness: 0.2
+                            color: 0xcc0000, // RCB Red
+                            roughness: 0.55,
+                            metalness: 0.15
                         });
                     } else {
                         node.material = new THREE.MeshStandardMaterial({
-                            color: 0x111111, // RCB Black Pants/Joints
-                            roughness: 0.7
+                            color: 0x111111, // RCB Black
+                            roughness: 0.8
                         });
                     }
                 }
             });
             scene.add(player);
 
+            // Add Bat
+            const bat = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.9, 0.16),
+                new THREE.MeshStandardMaterial({ color: 0x5a4231 })
+            );
+            bat.position.set(0.4, 0.7, 0.2);
+            player.add(bat);
+
             mixer = new THREE.AnimationMixer(player);
             if(gltf.animations.length > 0) mixer.clipAction(gltf.animations[0]).play();
         });
 
-        camera.position.set(0, 2, 10);
+        // 5. CAMERA & ANIMATION
+        camera.position.set(0, 2.2, 9.5);
         camera.lookAt(0, 1.8, 0);
 
         function animate() {
@@ -111,12 +130,4 @@
         }
 
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        animate();
-    </script>
-</body>
-</html>
+            camera.aspect = window.innerWidth / window.innerHeight
