@@ -2,104 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cric Ultra 2</title>
+    <title>Cric Ultra - RC24 Edition</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #msg { 
             position: absolute; color: white; top: 20px; width: 100%; 
-            text-align: center; z-index: 100; text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
-            pointer-events: none; font-size: 1.4rem; font-weight: bold;
+            text-align: center; z-index: 100; text-shadow: 2px 2px 5px rgba(0,0,0,0.7);
+            font-size: 1.5rem; font-weight: bold;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <div id="msg">Fast Loading Human Model...</div>
+    <div id="msg">Loading RC24 Style Player...</div>
 
     <script>
         const clock = new THREE.Clock();
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); 
-        scene.fog = new THREE.Fog(0x87CEEB, 40, 150);
+        scene.background = new THREE.Color(0x87CEEB); // Bright Sky Blue
+        scene.fog = new THREE.Fog(0x87CEEB, 30, 100);
 
-        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic colors like RC24
+        renderer.toneMappingExposure = 1.3;
         document.body.appendChild(renderer.domElement);
 
-        // Lighting
-        const sun = new THREE.DirectionalLight(0xffffff, 1.3);
-        sun.position.set(30, 50, 30);
+        // 1. STADIUM LIGHTING (Bright Sun like the photo)
+        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+        sun.position.set(10, 30, 10);
         sun.castShadow = true;
         scene.add(sun);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6)); // Soft fill light
 
-        // Pitch & Field
-        const texLoader = new THREE.TextureLoader();
-        const grassTex = texLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-        grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-        grassTex.repeat.set(50, 50);
-
-        const outfield = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ map: grassTex }));
+        // 2. VIBRANT GRASS (Matching your photo's color)
+        const outfield = new THREE.Mesh(
+            new THREE.PlaneGeometry(300, 300), 
+            new THREE.MeshStandardMaterial({ color: 0x4fb32a, roughness: 0.8 }) // Bright RC24 Green
+        );
         outfield.rotation.x = -Math.PI / 2;
         outfield.receiveShadow = true;
         scene.add(outfield);
 
-        const pitch = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 22), new THREE.MeshStandardMaterial({ color: 0x966F33 }));
-        pitch.rotation.x = -Math.PI / 2;
-        pitch.position.y = 0.02;
-        pitch.receiveShadow = true;
-        scene.add(pitch);
-
-        // FAST LOAD MODEL
+        // 3. HUMAN PLAYER LOAD
         let player, mixer;
         const loader = new THREE.GLTFLoader();
         
-        // Using the "Soldier" model - it's 10x smaller and loads in < 5 seconds
-        loader.load('https://threejs.org/examples/models/gltf/Soldier.glb', 
-            (gltf) => {
-                player = gltf.scene;
-                player.scale.set(1.5, 1.5, 1.5);
-                player.position.set(0, 0, 8);
-                player.traverse(n => { if(n.isMesh) n.castShadow = true; });
-                scene.add(player);
-                
-                mixer = new THREE.AnimationMixer(player);
-                // Play the Idle animation
-                mixer.clipAction(gltf.animations[0]).play();
-                
-                document.getElementById('msg').innerHTML = "READY! WASD to Move Player";
-            },
-            (xhr) => {
-                const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                document.getElementById('msg').innerHTML = "Fast Load: " + percent + "%";
-            },
-            (e) => {
-                document.getElementById('msg').innerHTML = "Error loading model. Try refreshing.";
-            }
-        );
+        // Loading a Humanoid character (The 'Xbot' is a perfectly rigged human)
+        loader.load('https://threejs.org/examples/models/gltf/Xbot.glb', (gltf) => {
+            player = gltf.scene;
+            player.scale.set(1.8, 1.8, 1.8);
+            player.position.set(0, 0, 5);
+            
+            player.traverse(n => {
+                if(n.isMesh) {
+                    n.castShadow = true;
+                    // Give him a "Blue Kit" color like Team India in your photo
+                    n.material.color.set(0x1a5fb4); 
+                }
+            });
+            scene.add(player);
 
-        camera.position.set(0, 5, 16); 
-        const keys = {};
-        window.onkeydown = (e) => keys[e.key.toLowerCase()] = true;
-        window.onkeyup = (e) => keys[e.key.toLowerCase()] = false;
+            // Add a simple "Bat" (Cube placeholder) to his hand
+            const bat = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.8, 0.2),
+                new THREE.MeshStandardMaterial({color: 0x966F33})
+            );
+            bat.position.set(0.3, 0.5, 0.2); // Position near hand
+            player.add(bat);
+
+            mixer = new THREE.AnimationMixer(player);
+            mixer.clipAction(gltf.animations[0]).play(); // Standing/Idle
+            
+            document.getElementById('msg').innerHTML = "RC24 PLAYER READY";
+        });
+
+        // 4. CAMERA VIEW (Similar to your photo)
+        camera.position.set(0, 3, 12); 
+        camera.lookAt(0, 1.5, 0);
 
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
             if(mixer) mixer.update(delta);
-
-            if(player) {
-                if(keys['a']) player.position.x -= 0.1;
-                if(keys['d']) player.position.x += 0.1;
-                if(keys['w']) player.position.z -= 0.1;
-                if(keys['s']) player.position.z += 0.1;
-                camera.position.x += (player.position.x - camera.position.x) * 0.05;
-                camera.lookAt(player.position.x, 1.5, player.position.z);
-            }
             renderer.render(scene, camera);
         }
         animate();
